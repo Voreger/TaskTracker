@@ -19,6 +19,9 @@ func main() {
 	taskStore := store.NewTaskStore(db.Pool)
 	handlers.RegisterTaskRoutes(r, taskStore)
 
+	userStore := store.NewUserStore(db.Pool)
+	handlers.RegisterUserRoutes(r, userStore)
+
 	log.Println("server listening on :8080")
 	err = http.ListenAndServe(":8080", r)
 	if err != nil {
