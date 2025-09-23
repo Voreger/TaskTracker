@@ -10,6 +10,7 @@ import (
 
 func main() {
 	r := chi.NewRouter()
+	r.Use(handlers.Logger)
 	db, err := store.NewDB()
 	if err != nil {
 		log.Fatalf("db error: %v", err)
