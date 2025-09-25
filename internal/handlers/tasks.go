@@ -26,6 +26,16 @@ func RegisterTaskRoutes(r chi.Router, s *store.TaskStore) {
 	})
 }
 
+// ListTasks godoc
+// @Summary      Get all tasks for current user
+// @Description  Returns list of tasks belonging to the authenticated user
+// @Tags         tasks
+// @Produce      json
+// @Success      200  {array}   models.Task
+// @Failure      401  {string}  string "unauthorized"
+// @Failure      500  {string}  string "internal error"
+// @Security     ApiKeyAuth
+// @Router       /tasks [get]
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("userID").(int)
 	if !ok {
@@ -45,6 +55,19 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateTask godoc
+// @Summary      Create task
+// @Description  Creates a new task for the authenticated user
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Param        task  body      models.Task  true  "Task info"
+// @Success      201   {object}  models.Task
+// @Failure      400   {string}  string "invalid input"
+// @Failure      401   {string}  string "unauthorized"
+// @Failure      500   {string}  string "internal error"
+// @Security     ApiKeyAuth
+// @Router       /tasks [post]
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task models.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
@@ -71,6 +94,18 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetTask godoc
+// @Summary      Get task by ID
+// @Description  Returns a single task by its ID
+// @Tags         tasks
+// @Produce      json
+// @Param        id   path      int  true  "Task ID"
+// @Success      200  {object}  models.Task
+// @Failure      400  {string}  string "invalid id"
+// @Failure      401  {string}  string "unauthorized"
+// @Failure      500  {string}  string "internal error"
+// @Security     ApiKeyAuth
+// @Router       /tasks/{id} [get]
 func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -89,6 +124,20 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UpdateTask godoc
+// @Summary      Update task
+// @Description  Updates an existing task for the authenticated user
+// @Tags         tasks
+// @Accept       json
+// @Produce      json
+// @Param        id    path      int         true  "Task ID"
+// @Param        task  body      models.Task true  "Task info"
+// @Success      200   {object}  models.Task
+// @Failure      400   {string}  string "invalid input"
+// @Failure      401   {string}  string "unauthorized"
+// @Failure      500   {string}  string "internal error"
+// @Security     ApiKeyAuth
+// @Router       /tasks/{id} [put]
 func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -114,6 +163,17 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteTask godoc
+// @Summary      Delete task
+// @Description  Deletes a task by ID for the authenticated user
+// @Tags         tasks
+// @Param        id   path      int  true  "Task ID"
+// @Success      204  {string}  string "no content"
+// @Failure      400  {string}  string "invalid id"
+// @Failure      401  {string}  string "unauthorized"
+// @Failure      500  {string}  string "internal error"
+// @Security     ApiKeyAuth
+// @Router       /tasks/{id} [delete]
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

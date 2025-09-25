@@ -21,6 +21,17 @@ func RegisterAuthRoutes(r chi.Router, s *store.UserStore) {
 	r.Post("/auth/login", h.Login)
 }
 
+// Register godoc
+// @Summary      Register new user
+// @Description  Creates a new user account
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        user  body      models.User  true  "User info"
+// @Success      201   {object}  models.User
+// @Failure      400   {string}  string "invalid input"
+// @Failure      500   {string}  string "internal error"
+// @Router       /auth/register [post]
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var u models.User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -45,6 +56,18 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(u)
 }
 
+// Login godoc
+// @Summary      Login
+// @Description  Authenticate user and return JWT token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body      map[string]string  true  "Email and password"
+// @Success      200  {object}  map[string]string "token"
+// @Failure      400  {string}  string "invalid input"
+// @Failure      401  {string}  string "unauthorized"
+// @Failure      500  {string}  string "internal error"
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Email    string `json:"email"`

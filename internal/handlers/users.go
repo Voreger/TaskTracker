@@ -30,6 +30,14 @@ func RegisterUserRoutes(r chi.Router, s *store.UserStore) {
 	})
 }
 
+// ListUsers godoc
+// @Summary      Get all users
+// @Description  Returns list of all users
+// @Tags         users
+// @Produce      json
+// @Success      200  {array}  models.User
+// @Failure      500  {string}  string  "internal error"
+// @Router       /users [get]
 func (h *UserHandlers) ListUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Store.List(context.Background())
 	if err != nil {
@@ -43,6 +51,16 @@ func (h *UserHandlers) ListUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// GetUser godoc
+// @Summary      Get user by ID
+// @Description  Returns a single user by their ID
+// @Tags         users
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Success      200  {object}  models.User
+// @Failure      400  {string}  string "invalid id"
+// @Failure      500  {string}  string "internal error"
+// @Router       /users/{id} [get]
 func (h *UserHandlers) GetUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -66,6 +84,17 @@ func (h *UserHandlers) GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// CreateUser godoc
+// @Summary      Create user
+// @Description  Create a new user account
+// @Tags         users
+// @Accept 		 json
+// @Produce      json
+// @Param        user   body    models.User  true  "User info"
+// @Success      201  {object}  models.User
+// @Failure      400  {string}  string "invalid id"
+// @Failure      500  {string}  string "internal error"
+// @Router       /users [post]
 func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var u models.User
 	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
@@ -92,6 +121,16 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// DeleteUser godoc
+// @Summary      Delete user
+// @Description  Delete a user by ID
+// @Tags         users
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Success      204  {string}  string "no content"
+// @Failure      400  {string}  string "invalid id"
+// @Failure      500  {string}  string "internal error"
+// @Router       /users/{id} [delete]
 func (h *UserHandlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
@@ -107,6 +146,19 @@ func (h *UserHandlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UpdateUser godoc
+// @Summary      Update user
+// @Description  Updates an existing user
+// @Tags         users
+// @Accept		 json
+// @Produce      json
+// @Param        id   path      int  true  "User ID"
+// @Param        user   body    models.User  true  "User info"
+// @Success      200  {object}  models.User
+// @Failure      400  {string}  string "invalid id"
+// @Failure      404  {string}  string "not found"
+// @Failure      500  {string}  string "internal error"
+// @Router       /users/{id} [put]
 func (h *UserHandlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)

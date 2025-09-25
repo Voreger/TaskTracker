@@ -1,9 +1,11 @@
 package main
 
 import (
+	_ "GoProjects/TaskTracker/internal/docs"
 	"GoProjects/TaskTracker/internal/handlers"
 	"GoProjects/TaskTracker/internal/store"
 	"github.com/go-chi/chi/v5"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
 )
@@ -11,6 +13,7 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Use(handlers.Logger)
+	r.Mount("/swagger/", httpSwagger.WrapHandler)
 	db, err := store.NewDB()
 	if err != nil {
 		log.Fatalf("db error: %v", err)
