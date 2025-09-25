@@ -27,7 +27,13 @@ func RegisterTaskRoutes(r chi.Router, s *store.TaskStore) {
 }
 
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
-	tasks, err := h.Store.List(context.Background())
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	tasks, err := h.Store.List(context.Background(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -45,6 +51,14 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	task.UserID = userID
+
 	if err := h.Store.Create(context.Background(), &task); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

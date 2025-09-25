@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"GoProjects/TaskTracker/internal/auth"
 	"GoProjects/TaskTracker/internal/models"
 	"GoProjects/TaskTracker/internal/store"
 	"context"
@@ -9,7 +10,6 @@ import (
 	"errors"
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
-	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
 )
@@ -73,12 +73,12 @@ func (h *UserHandlers) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	hashed, err := auth.HashPassword(u.Password)
 	if err != nil {
 		http.Error(w, "failed to hashed password", http.StatusInternalServerError)
 		return
 	}
-	u.Password = string(hashed)
+	u.Password = hashed
 
 	if err := h.Store.Create(context.Background(), &u); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -120,12 +120,12 @@ func (h *UserHandlers) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	hashed, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	hashed, err := auth.HashPassword(u.Password)
 	if err != nil {
 		http.Error(w, "failed to hashed password", http.StatusInternalServerError)
 		return
 	}
-	u.Password = string(hashed)
+	u.Password = hashed
 
 	u.ID = id
 	updated, err := h.Store.Update(context.Background(), &u)

@@ -35,9 +35,10 @@ func (s *TaskStore) Get(ctx context.Context, id int) (t *models.Task, err error)
 }
 
 // List all
-func (s *TaskStore) List(ctx context.Context) ([]*models.Task, error) {
-	query := `SELECT id, title, description, status, user_id, created_at, updated_at FROM tasks`
-	rows, err := s.Pool.Query(ctx, query)
+func (s *TaskStore) List(ctx context.Context, userID int) ([]*models.Task, error) {
+	query := `SELECT id, title, description, status, user_id, created_at, updated_at FROM tasks where user_id = $1`
+	rows, err := s.Pool.Query(ctx, query, userID)
+
 	if err != nil {
 		return nil, err
 	}

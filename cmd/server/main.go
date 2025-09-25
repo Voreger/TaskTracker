@@ -17,15 +17,15 @@ func main() {
 	}
 	defer db.Pool.Close()
 
-	taskStore := store.NewTaskStore(db.Pool)
-	handlers.RegisterTaskRoutes(r, taskStore)
-
 	userStore := store.NewUserStore(db.Pool)
 	handlers.RegisterUserRoutes(r, userStore)
+	handlers.RegisterAuthRoutes(r, userStore)
+
+	r.Group(func(pr chi.Router) {
+		pr.Use(handlers.AuthMiddleware)
+		handlers.RegisterTaskRoutes(pr, store.NewTaskStore(db.Pool))
+	})
 
 	log.Println("server listening on :8080")
-	err = http.ListenAndServe(":8080", r)
-	if err != nil {
-		return
-	}
+	log.Fatal(http.ListenAndServe(":8080", r))
 }

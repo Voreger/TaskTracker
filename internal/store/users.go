@@ -32,6 +32,17 @@ func (s *UserStore) Get(ctx context.Context, id int) (*models.User, error) {
 	return u, nil
 }
 
+// Get by email
+func (s *UserStore) GetByEmail(ctx context.Context, email string) (*models.User, error) {
+	u := &models.User{}
+	query := `SELECT id, email, password, created_at FROM users WHERE email = $1;`
+	err := s.Pool.QueryRow(ctx, query, email).Scan(&u.ID, &u.Email, &u.Password, &u.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
 // Get all users
 func (s *UserStore) List(ctx context.Context) ([]*models.User, error) {
 	query := `SELECT id, email, password, created_at FROM users;`
