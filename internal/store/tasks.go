@@ -18,8 +18,8 @@ func NewTaskStore(pool *pgxpool.Pool) *TaskStore {
 // Create
 func (s *TaskStore) Create(ctx context.Context, t *models.Task) error {
 	query := `INSERT INTO tasks (title, description, status, user_id) 
-			  VALUES ($1, $2, $3, $4) returning user_id, created_at, updated_at;`
-	return s.Pool.QueryRow(ctx, query, t.Title, t.Description, t.Status, t.UserID).Scan(&t.UserID, &t.CreatedAt, &t.UpdatedAt)
+			  VALUES ($1, $2, $3, $4) returning id, user_id, created_at, updated_at;`
+	return s.Pool.QueryRow(ctx, query, t.Title, t.Description, t.Status, t.UserID).Scan(&t.ID, &t.UserID, &t.CreatedAt, &t.UpdatedAt)
 }
 
 // Get by id

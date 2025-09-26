@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"GoProjects/TaskTracker/internal/models"
+	"GoProjects/TaskTracker/internal/realtime"
 	"GoProjects/TaskTracker/internal/store"
 	"context"
 	"encoding/json"
@@ -12,10 +13,11 @@ import (
 
 type TaskHandler struct {
 	Store *store.TaskStore
+	Hub   *realtime.Hub
 }
 
-func RegisterTaskRoutes(r chi.Router, s *store.TaskStore) {
-	h := &TaskHandler{Store: s}
+func RegisterTaskRoutes(r chi.Router, s *store.TaskStore, hub *realtime.Hub) {
+	h := &TaskHandler{Store: s, Hub: hub}
 
 	r.Route("/tasks", func(r chi.Router) {
 		r.Get("/", h.ListTasks)
@@ -92,6 +94,10 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	h.Hub.Broadcast(realtime.Message{
+		Type: "task_created",
+		Data: task,
+	})
 }
 
 // GetTask godoc
@@ -161,6 +167,10 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	h.Hub.Broadcast(realtime.Message{
+		Type: "task_updated",
+		Data: updated,
+	})
 }
 
 // DeleteTask godoc
@@ -187,4 +197,8 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+	h.Hub.Broadcast(realtime.Message{
+		Type: "task_deleted",
+		Data: map[string]int{"id": id},
+	})
 }

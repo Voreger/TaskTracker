@@ -3,6 +3,7 @@ package handlers
 import (
 	"GoProjects/TaskTracker/internal/auth"
 	"context"
+	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
 	"strings"
@@ -11,16 +12,26 @@ import (
 
 type responseWriter struct {
 	http.ResponseWriter
-	status int
+	status      int
+	wroteHeader bool
 }
 
 func (rw *responseWriter) WriteHeader(status int) {
+	if rw.wroteHeader {
+		return
+	}
 	rw.status = status
 	rw.ResponseWriter.WriteHeader(status)
+	rw.wroteHeader = true
 }
 
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/ws" || websocket.IsWebSocketUpgrade(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
@@ -32,6 +43,11 @@ func Logger(next http.Handler) http.Handler {
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if websocket.IsWebSocketUpgrade(r) {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			http.Error(w, "missing token", http.StatusUnauthorized)
