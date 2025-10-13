@@ -33,10 +33,10 @@ func RegisterTaskRoutes(r chi.Router, s *store.TaskStore, hub *realtime.Hub) {
 // @Description  Returns list of tasks belonging to the authenticated user
 // @Tags         tasks
 // @Produce      json
+// @Security     BearerAuth
 // @Success      200  {array}   models.Task
 // @Failure      401  {string}  string "unauthorized"
 // @Failure      500  {string}  string "internal error"
-// @Security     ApiKeyAuth
 // @Router       /tasks [get]
 func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value("userID").(int)
@@ -64,11 +64,11 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        task  body      models.Task  true  "Task info"
+// @Security 	 BearerAuth
 // @Success      201   {object}  models.Task
 // @Failure      400   {string}  string "invalid input"
 // @Failure      401   {string}  string "unauthorized"
 // @Failure      500   {string}  string "internal error"
-// @Security     ApiKeyAuth
 // @Router       /tasks [post]
 func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task models.Task
@@ -106,11 +106,11 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 // @Tags         tasks
 // @Produce      json
 // @Param        id   path      int  true  "Task ID"
+// @Security 	 BearerAuth
 // @Success      200  {object}  models.Task
 // @Failure      400  {string}  string "invalid id"
 // @Failure      401  {string}  string "unauthorized"
 // @Failure      500  {string}  string "internal error"
-// @Security     ApiKeyAuth
 // @Router       /tasks/{id} [get]
 func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -138,11 +138,11 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 // @Produce      json
 // @Param        id    path      int         true  "Task ID"
 // @Param        task  body      models.Task true  "Task info"
+// @Security 	 BearerAuth
 // @Success      200   {object}  models.Task
 // @Failure      400   {string}  string "invalid input"
 // @Failure      401   {string}  string "unauthorized"
 // @Failure      500   {string}  string "internal error"
-// @Security     ApiKeyAuth
 // @Router       /tasks/{id} [put]
 func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -178,11 +178,11 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 // @Description  Deletes a task by ID for the authenticated user
 // @Tags         tasks
 // @Param        id   path      int  true  "Task ID"
+// @Security 	 BearerAuth
 // @Success      204  {string}  string "no content"
 // @Failure      400  {string}  string "invalid id"
 // @Failure      401  {string}  string "unauthorized"
 // @Failure      500  {string}  string "internal error"
-// @Security     ApiKeyAuth
 // @Router       /tasks/{id} [delete]
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")

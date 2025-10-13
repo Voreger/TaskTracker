@@ -62,8 +62,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 // @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        credentials  body      map[string]string  true  "Email and password"
-// @Success      200  {object}  map[string]string "token"
+// @Param        credentials  body      models.LoginRequest  true  "Email and password"
+// @Success      200  {string}  map[string]string "token"
 // @Failure      400  {string}  string "invalid input"
 // @Failure      401  {string}  string "unauthorized"
 // @Failure      500  {string}  string "internal error"

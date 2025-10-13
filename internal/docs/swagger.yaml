@@ -1,4 +1,11 @@
 definitions:
+  models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
   models.Task:
     properties:
       created_at:
@@ -41,18 +48,14 @@ paths:
         name: credentials
         required: true
         schema:
-          additionalProperties:
-            type: string
-          type: object
+          $ref: '#/definitions/models.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: token
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            type: string
         "400":
           description: invalid input
           schema:
@@ -119,7 +122,7 @@ paths:
           schema:
             type: string
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get all tasks for current user
       tags:
       - tasks
@@ -154,7 +157,7 @@ paths:
           schema:
             type: string
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Create task
       tags:
       - tasks
@@ -185,7 +188,7 @@ paths:
           schema:
             type: string
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Delete task
       tags:
       - tasks
@@ -217,7 +220,7 @@ paths:
           schema:
             type: string
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Get task by ID
       tags:
       - tasks
@@ -257,7 +260,7 @@ paths:
           schema:
             type: string
       security:
-      - ApiKeyAuth: []
+      - BearerAuth: []
       summary: Update task
       tags:
       - tasks
@@ -400,4 +403,10 @@ paths:
       summary: Update user
       tags:
       - users
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

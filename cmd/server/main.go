@@ -11,6 +11,10 @@ import (
 	"net/http"
 )
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 func main() {
 	r := chi.NewRouter()
 	r.Use(handlers.Logger)
