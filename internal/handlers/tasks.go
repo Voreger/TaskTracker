@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"GoProjects/TaskTracker/internal/cache"
 	"GoProjects/TaskTracker/internal/models"
 	"GoProjects/TaskTracker/internal/queue"
 	"GoProjects/TaskTracker/internal/realtime"
@@ -8,6 +9,8 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
+	"time"
+
 	"log"
 	"net/http"
 	"strconv"
@@ -17,10 +20,11 @@ type TaskHandler struct {
 	Store  *store.TaskStore
 	Hub    *realtime.Hub
 	Broker *queue.Broker
+	Cache  *cache.RedisCache
 }
 
-func RegisterTaskRoutes(r chi.Router, s *store.TaskStore, hub *realtime.Hub, broker *queue.Broker) {
-	h := &TaskHandler{Store: s, Hub: hub, Broker: broker}
+func RegisterTaskRoutes(r chi.Router, s *store.TaskStore, hub *realtime.Hub, broker *queue.Broker, cache *cache.RedisCache) {
+	h := &TaskHandler{Store: s, Hub: hub, Broker: broker, Cache: cache}
 
 	r.Route("/tasks", func(r chi.Router) {
 		r.Get("/", h.ListTasks)
@@ -48,16 +52,28 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cacheKey := "tasks:user:" + strconv.Itoa(userID)
+	cached, err := h.Cache.Get(cacheKey)
+	if err == nil && cached != "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(cached))
+		return
+	}
+
 	tasks, err := h.Store.List(context.Background(), userID)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	data, err := json.Marshal(tasks)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(tasks)
+	w.Write(data)
 	if err != nil {
 		return
 	}
+
+	_ = h.Cache.Set(cacheKey, string(data), 30*time.Second)
 }
 
 // CreateTask godoc
@@ -114,6 +130,8 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 			log.Println("Publish error:", err)
 		}
 	}()
+
+	_ = h.Cache.Delete("tasks:user:" + strconv.Itoa(userID))
 }
 
 // GetTask godoc
@@ -135,15 +153,29 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
+
+	cacheKey := "task:" + idStr
+
+	cached, err := h.Cache.Get(cacheKey)
+	if err == nil && cached != "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(cached))
+		return
+	}
+
 	task, err := h.Store.Get(context.Background(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 	}
+
+	data, err := json.Marshal(task)
 	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(task)
+	w.Write(data)
 	if err != nil {
 		return
 	}
+
+	_ = h.Cache.Set(cacheKey, string(data), 30*time.Second)
 }
 
 // UpdateTask godoc
@@ -200,6 +232,8 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 			log.Println("Publish error:", err)
 		}
 	}()
+
+	_ = h.Cache.Delete("tasks:user:" + strconv.Itoa(id))
 }
 
 // DeleteTask godoc
@@ -214,17 +248,25 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 // @Failure      500  {string}  string "internal error"
 // @Router       /tasks/{id} [delete]
 func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
+
 	err = h.Store.Delete(context.Background(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusNoContent)
 	h.Hub.Broadcast(realtime.Message{
 		Type: "task_deleted",
@@ -243,4 +285,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 			log.Println("Publish error:", err)
 		}
 	}()
+
+	_ = h.Cache.Delete("tasks:user:" + strconv.Itoa(userID))
+	_ = h.Cache.Delete("task:" + idStr)
 }

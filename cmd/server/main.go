@@ -1,6 +1,7 @@
 package main
 
 import (
+	"GoProjects/TaskTracker/internal/cache"
 	_ "GoProjects/TaskTracker/internal/docs"
 	"GoProjects/TaskTracker/internal/handlers"
 	"GoProjects/TaskTracker/internal/queue"
@@ -8,6 +9,7 @@ import (
 	"GoProjects/TaskTracker/internal/store"
 	"context"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/httprate"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
@@ -24,6 +26,7 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Use(handlers.Logger)
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 	r.Mount("/swagger/", httpSwagger.WrapHandler)
 	db, err := store.NewDB()
 	if err != nil {
@@ -42,13 +45,16 @@ func main() {
 	}
 	defer broker.Close()
 
+	redisCache := cache.NewRedisCache("redis:6379")
+	defer redisCache.Close()
+
 	userStore := store.NewUserStore(db.Pool)
 	handlers.RegisterUserRoutes(r, userStore)
 	handlers.RegisterAuthRoutes(r, userStore)
 
 	r.Group(func(pr chi.Router) {
 		pr.Use(handlers.AuthMiddleware)
-		handlers.RegisterTaskRoutes(pr, store.NewTaskStore(db.Pool), hub, broker)
+		handlers.RegisterTaskRoutes(pr, store.NewTaskStore(db.Pool), hub, broker, redisCache)
 	})
 
 	srv := &http.Server{
