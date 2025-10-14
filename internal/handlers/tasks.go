@@ -2,22 +2,25 @@ package handlers
 
 import (
 	"GoProjects/TaskTracker/internal/models"
+	"GoProjects/TaskTracker/internal/queue"
 	"GoProjects/TaskTracker/internal/realtime"
 	"GoProjects/TaskTracker/internal/store"
 	"context"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
+	"log"
 	"net/http"
 	"strconv"
 )
 
 type TaskHandler struct {
-	Store *store.TaskStore
-	Hub   *realtime.Hub
+	Store  *store.TaskStore
+	Hub    *realtime.Hub
+	Broker *queue.Broker
 }
 
-func RegisterTaskRoutes(r chi.Router, s *store.TaskStore, hub *realtime.Hub) {
-	h := &TaskHandler{Store: s, Hub: hub}
+func RegisterTaskRoutes(r chi.Router, s *store.TaskStore, hub *realtime.Hub, broker *queue.Broker) {
+	h := &TaskHandler{Store: s, Hub: hub, Broker: broker}
 
 	r.Route("/tasks", func(r chi.Router) {
 		r.Get("/", h.ListTasks)
@@ -98,6 +101,19 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		Type: "task_created",
 		Data: task,
 	})
+
+	go func() {
+		msg := queue.EventMessage{
+			Type:    queue.EventTaskCreated,
+			Payload: task,
+		}
+
+		body, _ := json.Marshal(msg)
+		err := h.Broker.Publish(body)
+		if err != nil {
+			log.Println("Publish error:", err)
+		}
+	}()
 }
 
 // GetTask godoc
@@ -171,6 +187,19 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		Type: "task_updated",
 		Data: updated,
 	})
+
+	go func() {
+		msg := queue.EventMessage{
+			Type:    queue.EventTaskUpdated,
+			Payload: updated,
+		}
+
+		body, _ := json.Marshal(msg)
+		err := h.Broker.Publish(body)
+		if err != nil {
+			log.Println("Publish error:", err)
+		}
+	}()
 }
 
 // DeleteTask godoc
@@ -201,4 +230,17 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		Type: "task_deleted",
 		Data: map[string]int{"id": id},
 	})
+
+	go func() {
+		msg := queue.EventMessage{
+			Type:    queue.EventTaskDeleted,
+			Payload: id,
+		}
+
+		body, _ := json.Marshal(msg)
+		err := h.Broker.Publish(body)
+		if err != nil {
+			log.Println("Publish error:", err)
+		}
+	}()
 }
