@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"GoProjects/TaskTracker/internal/cache"
+	"GoProjects/TaskTracker/internal/logger"
+	"GoProjects/TaskTracker/internal/metrics"
 	"GoProjects/TaskTracker/internal/models"
 	"GoProjects/TaskTracker/internal/queue"
 	"GoProjects/TaskTracker/internal/realtime"
@@ -9,9 +11,9 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 	"time"
 
-	"log"
 	"net/http"
 	"strconv"
 )
@@ -54,7 +56,11 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	cacheKey := "tasks:user:" + strconv.Itoa(userID)
 	cached, err := h.Cache.Get(cacheKey)
-	if err == nil && cached != "" {
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//}
+
+	if cached != "" {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(cached))
 		return
@@ -113,6 +119,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+	metrics.TaskCreated.Inc()
 	h.Hub.Broadcast(realtime.Message{
 		Type: "task_created",
 		Data: task,
@@ -127,7 +134,7 @@ func (h *TaskHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		body, _ := json.Marshal(msg)
 		err := h.Broker.Publish(body)
 		if err != nil {
-			log.Println("Publish error:", err)
+			logger.Log.Error("Publish error", zap.Error(err))
 		}
 	}()
 
@@ -229,7 +236,7 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		body, _ := json.Marshal(msg)
 		err := h.Broker.Publish(body)
 		if err != nil {
-			log.Println("Publish error:", err)
+			logger.Log.Error("Publish error", zap.Error(err))
 		}
 	}()
 
@@ -282,7 +289,7 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		body, _ := json.Marshal(msg)
 		err := h.Broker.Publish(body)
 		if err != nil {
-			log.Println("Publish error:", err)
+			logger.Log.Error("Publish error", zap.Error(err))
 		}
 	}()
 

@@ -1,6 +1,7 @@
 package realtime
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gorilla/websocket"
 )
@@ -32,7 +33,7 @@ func NewHub() *Hub {
 	}
 }
 
-func (h *Hub) Run() {
+func (h *Hub) Run(ctx context.Context) {
 	for {
 		select {
 		case client := <-h.Register:
@@ -52,6 +53,12 @@ func (h *Hub) Run() {
 					delete(h.clients, client)
 				}
 			}
+		case <-ctx.Done():
+			for client := range h.clients {
+				close(client.send)
+				delete(h.clients, client)
+			}
+			return
 		}
 	}
 }

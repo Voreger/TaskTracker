@@ -1,6 +1,11 @@
 package queue
 
-import "github.com/rabbitmq/amqp091-go"
+import (
+	"GoProjects/TaskTracker/internal/logger"
+	"github.com/rabbitmq/amqp091-go"
+	"go.uber.org/zap"
+	"time"
+)
 
 type Broker struct {
 	conn    *amqp091.Connection
@@ -22,7 +27,18 @@ type EventMessage struct {
 }
 
 func NewBroker(url, queueName string) (*Broker, error) {
-	conn, err := amqp091.Dial(url)
+	var err error
+	var conn *amqp091.Connection
+
+	for i := 1; i <= 20; i++ {
+		conn, err = amqp091.Dial(url)
+		if err == nil {
+			break
+		}
+		logger.Log.Error("RabbitMQ error", zap.Error(err), zap.Int("retry", i))
+		time.Sleep(time.Duration(i) * 200 * time.Millisecond)
+	}
+
 	if err != nil {
 		return nil, err
 	}

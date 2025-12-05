@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   db:
     image: postgres:15
@@ -21,7 +19,10 @@ services:
     container_name: task_tracker_app
     restart: always
     depends_on:
-      - db
+      db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       DATABASE_URL: postgres://postgres:secret@db:5432/task_tracker?sslmode=disable
     ports:
@@ -36,14 +37,21 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
 
   worker:
     build:
       context: ..
       dockerfile: deploy/Dockerfile.worker
     container_name: notification_worker
+    restart: always
     depends_on:
-      - rabbitmq
+      rabbitmq:
+        condition: service_healthy
     environment:
       RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
 
@@ -53,6 +61,24 @@ services:
     ports:
       - "6379:6379"
     restart: always
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=secret
+    depends_on:
+      - prometheus
 
 volumes:
   db-data:

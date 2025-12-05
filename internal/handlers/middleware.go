@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"GoProjects/TaskTracker/internal/auth"
+	"GoProjects/TaskTracker/internal/logger"
+	"GoProjects/TaskTracker/internal/metrics"
 	"context"
 	"github.com/gorilla/websocket"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"strings"
 	"time"
@@ -27,7 +29,8 @@ func (rw *responseWriter) WriteHeader(status int) {
 
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/ws" || websocket.IsWebSocketUpgrade(r) {
+		if r.URL.Path == "/ws" || websocket.IsWebSocketUpgrade(r) || strings.HasPrefix(r.URL.Path, "/swagger") ||
+			r.URL.Path == "/metrics" {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -37,7 +40,21 @@ func Logger(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, r)
 
-		log.Printf("[%s] %s %d %s", r.Method, r.RequestURI, rw.status, time.Since(start))
+		duration := time.Since(start)
+
+		path := r.URL.Path
+		method := r.Method
+		status := rw.status
+
+		logger.Log.Info("HTTP request",
+			zap.String("method", method),
+			zap.String("path", path),
+			zap.Int("status", status),
+			zap.Duration("duration", duration),
+		)
+
+		metrics.IncRequest(path, method, status)
+		metrics.ObserveDuration(path, method, duration)
 	})
 }
 

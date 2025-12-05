@@ -1,10 +1,11 @@
 package handlers
 
 import (
+	"GoProjects/TaskTracker/internal/logger"
 	"GoProjects/TaskTracker/internal/realtime"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -26,7 +27,7 @@ func RegisterWSRoutes(r chi.Router, hub *realtime.Hub) {
 func (h *WSHandler) HandleWS(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("ws upgrade failed:", err)
+		logger.Log.Error("ws upgrade failed", zap.Error(err))
 		http.Error(w, "could not upgrade", http.StatusInternalServerError)
 		return
 	}

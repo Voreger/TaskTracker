@@ -1,10 +1,11 @@
 package store
 
 import (
+	"GoProjects/TaskTracker/internal/logger"
 	"GoProjects/TaskTracker/internal/models"
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
+	"go.uber.org/zap"
 )
 
 type TaskStore struct {
@@ -49,7 +50,7 @@ func (s *TaskStore) List(ctx context.Context, userID int) ([]*models.Task, error
 		t := &models.Task{}
 		err := rows.Scan(&t.ID, &t.Title, &t.Description, &t.Status, &t.UserID, &t.CreatedAt, &t.UpdatedAt)
 		if err != nil {
-			log.Println("scan error:", err)
+			logger.Log.Error("Scan error", zap.Error(err))
 			continue
 		}
 		tasks = append(tasks, t)
