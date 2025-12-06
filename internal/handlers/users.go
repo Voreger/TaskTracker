@@ -90,7 +90,7 @@ func (h *UserHandlers) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Tags         users
 // @Accept 		 json
 // @Produce      json
-// @Param        user   body    models.User  true  "User info"
+// @Param        user   body    models.LoginRequest  true  "User info"
 // @Success      201  {object}  models.User
 // @Failure      400  {string}  string "invalid id"
 // @Failure      500  {string}  string "internal error"
@@ -153,7 +153,7 @@ func (h *UserHandlers) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Accept		 json
 // @Produce      json
 // @Param        id   path      int  true  "User ID"
-// @Param        user   body    models.User  true  "User info"
+// @Param        user   body    models.LoginRequest  true  "User info"
 // @Success      200  {object}  models.User
 // @Failure      400  {string}  string "invalid id"
 // @Failure      404  {string}  string "not found"

@@ -56,9 +56,6 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 
 	cacheKey := "tasks:user:" + strconv.Itoa(userID)
 	cached, err := h.Cache.Get(cacheKey)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//}
 
 	if cached != "" {
 		w.Header().Set("Content-Type", "application/json")
@@ -88,7 +85,7 @@ func (h *TaskHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 // @Tags         tasks
 // @Accept       json
 // @Produce      json
-// @Param        task  body      models.Task  true  "Task info"
+// @Param        task  body      models.TaskRequest  true  "Task info"
 // @Security 	 BearerAuth
 // @Success      201   {object}  models.Task
 // @Failure      400   {string}  string "invalid input"
@@ -161,6 +158,12 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok || userID != id {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	cacheKey := "task:" + idStr
 
 	cached, err := h.Cache.Get(cacheKey)
@@ -192,7 +195,7 @@ func (h *TaskHandler) GetTask(w http.ResponseWriter, r *http.Request) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path      int         true  "Task ID"
-// @Param        task  body      models.Task true  "Task info"
+// @Param        task  body      models.TaskRequest true  "Task info"
 // @Security 	 BearerAuth
 // @Success      200   {object}  models.Task
 // @Failure      400   {string}  string "invalid input"
@@ -206,6 +209,13 @@ func (h *TaskHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid id", http.StatusBadRequest)
 		return
 	}
+
+	userID, ok := r.Context().Value("userID").(int)
+	if !ok || userID != id {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var t models.Task
 	if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -265,6 +275,11 @@ func (h *TaskHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	if userID != id {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
